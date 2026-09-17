@@ -58,7 +58,14 @@ step "6. No absolute host paths leaked into committed sources"
 # than matching the bare prefix: a bare-prefix pattern matches THIS FILE,
 # since the pattern and the failure message both contain the prefix
 # literally. A real leak is always a prefix followed by a user name.
+#
+# `.loom/` and `.claude/` are vendored third-party agent tooling, not sources
+# of this block: their docs and example configs legitimately show host paths,
+# and we do not edit them. Excluding them keeps this check pointed at what it
+# is for. If the exclusion ever hides a real leak, it will be in a file we did
+# not write, and `git ls-files` still lists it.
 if git ls-files \
+   | grep -vE '^\.(loom|claude)/' \
    | xargs grep -lIE '/Users/[a-z]|/home/[a-z]+/dev' 2>/dev/null | grep . ; then
   bad "the files above contain an absolute host path"
 fi

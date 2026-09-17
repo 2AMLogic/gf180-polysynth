@@ -24,6 +24,9 @@ fpga/bitstream.config
 fpga/bitstream.json
 fpga/synth.log
 fpga/pnr.log
+fpga/*.vvp
+fpga/sim.log
+fpga/sim_bug.log
 
 # Machine-local environment shim. Cold-start setup is documented in the
 # README; an env.sh naming absolute paths on one host is not committed.

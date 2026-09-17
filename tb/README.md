@@ -9,12 +9,17 @@ bench passed, on a named engine, at a named commit, and nothing more.
 
 **Through `klt` (the evidence-producing path).** One request document per
 run under `runs/`; `klt functional-verification` emits a JSON report that a
-`sim/` evidence record cites.
+`sim/` evidence record cites. The testbench imports the reference model, and
+the request document has no field for a Python path, so `spec/reference/`
+must be on `PYTHONPATH`:
 
 ```bash
-cd tb/runs/verilator && klt functional-verification request.json --format json
-cd tb/runs/icarus    && klt functional-verification request.json --format json
+export PYTHONPATH="$PWD/spec/reference:${PYTHONPATH:-}"
+(cd tb/runs/verilator && klt functional-verification request.json --format json)
+(cd tb/runs/icarus    && klt functional-verification request.json --format json)
 ```
+
+`tb/run_tb.py` sets that itself, which is one reason it is the easier path.
 
 **Through `tb/run_tb.py` (the PDK-free path).** The same sources, the same
 testbench, driven straight through cocotb's own runner — needs only
@@ -26,9 +31,27 @@ python3 tb/run_tb.py --sim icarus
 python3 tb/run_tb.py --sim verilator --nv 4
 ```
 
-`run_tb.py` reads the results XML and exits non-zero on any failure. cocotb's
+`run_tb.py` reads the results XML and turns it into an exit status. cocotb's
 runner does not do that by itself — without it, an injected-bug run would
 exit 0 with eleven failures and a green CI would mean nothing.
+
+Its three exit codes are **not** interchangeable, and anything asserting that
+a run should fail must require exactly `1`:
+
+| Exit | Meaning |
+|---|---|
+| `0` | every test passed |
+| `1` | the suite ran and at least one test failed |
+| `2` | the suite did not run — build error, simulator launch failure, no results XML, or an XML with no tests in it |
+
+The distinction is not hypothetical. cocotb 2.1's runner ends
+`_set_env_common()` with `self.env["PYTHONPATH"] = os.pathsep.join(sys.path)`,
+which runs *after* `self.env = dict(extra_env)` in `test()` — so a
+`PYTHONPATH` passed as `extra_env` is silently discarded. Until that was
+found, this suite died at `import synth_ref` before executing a single test
+on any machine that did not already export `PYTHONPATH`, which is to say on
+CI. `run_tb.py` now puts `spec/reference` and `tb/` on its own `sys.path`,
+which is what actually reaches the simulator's embedded interpreter.
 
 ## What the 12 tests cover
 
@@ -70,9 +93,19 @@ define, and each must **fail**:
 
 ```bash
 for b in GAIN TICK UART ENV; do
-  python3 tb/run_tb.py --sim icarus --define INJECT_BUG_$b=1 || echo "caught $b"
+  python3 tb/run_tb.py --sim icarus --define INJECT_BUG_$b=1 && rc=0 || rc=$?
+  case "$rc" in
+    1) echo "caught $b" ;;
+    0) echo "SURVIVED: $b" ;;
+    *) echo "NO VERDICT for $b (exit $rc): the suite did not run" ;;
+  esac
 done
 ```
+
+Do not shorten that to `|| echo "caught $b"`. Any non-zero status would then
+read as a catch, including the exit-2 cases where nothing was tested — which
+is precisely how CI reported all four bugs caught, in half a second each,
+while the suite was failing to start.
 
 | Define | The bug | Verified here (Icarus, `NV` default) |
 |---|---|---|
