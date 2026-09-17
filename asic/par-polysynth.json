@@ -1,0 +1,36 @@
+{
+  "schema": "klt.place_and_route.request/1",
+  "engine": "openroad",
+  "netlist": ".klt/synthesize/synth_core_synth.v",
+  "hdl_toplevel": "synth_core",
+  "pdk": { "cell_library": "gf180mcu_fd_sc_mcu9t5v0", "corner": "tt_025C_5v00" },
+  "floorplan": {
+    "method": "utilization",
+    "utilization_pct": 38,
+    "aspect_ratio": 1.0,
+    "core_margin_um": 2.0,
+    "site": "GF018hv5v_green_sc9"
+  },
+  "io": { "layer_h": "Metal3", "layer_v": "Metal4" },
+  "power": {
+    "power_net": "VDD",
+    "ground_net": "VSS",
+    "straps": [
+      { "layer": "Metal1", "width_um": 0.9, "pitch_um": 5.04, "offset_um": 0, "followpins": true },
+      { "layer": "Metal4", "width_um": 4.48, "spacing_um": 0.56, "pitch_um": 44.8, "offset_um": 22.4 },
+      { "layer": "Metal5", "width_um": 4.48, "pitch_um": 89.6, "offset_um": 44.8 }
+    ],
+    "connects": [
+      {
+        "layers": ["Metal1", "Metal4"],
+        "max_columns": 5,
+        "ongrid": ["Metal2", "Metal3", "Metal4"],
+        "split_cuts": { "layer": "Metal3", "width_um": 0.128 }
+      },
+      { "layers": ["Metal4", "Metal5"] }
+    ]
+  },
+  "constraints": { "clock_port": "clk", "clock_period_ns": 81.38 },
+  "seed": 1,
+  "target_stage": "route"
+}

@@ -1,0 +1,11 @@
+{
+  "schema": "klt.lvs.request/1",
+  "engine": "klayout",
+  "layout": { "netlist": "synth_core.gate.spice", "top": "synth_core" },
+  "reference": {
+    "netlist": ".klt/place-and-route/synth_core.v",
+    "top": "synth_core",
+    "form": "gate-level-verilog",
+    "library": "gf180mcu_fd_sc_mcu9t5v0"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "schema": "klt.synthesize.request/1",
+  "engine": "yosys",
+  "sources": ["../rtl/uart_rx.v", "../rtl/synth_voice.v", "../rtl/synth_core.v"],
+  "hdl_toplevel": "synth_core",
+  "pdk": { "cell_library": "gf180mcu_fd_sc_mcu9t5v0", "corner": "tt_025C_5v00" },
+  "constraints": { "clock_period_ns": 81.38 }
+}
