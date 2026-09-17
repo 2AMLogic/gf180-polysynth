@@ -1,10 +1,16 @@
 # CI for gf180-polysynth.
 #
 # Scope is deliberate and documented, not accidental: this workflow runs the
-# **PDK-free, tool-light** legs only. Everything here needs nothing but
-# python3, iverilog and verilator from apt, and cocotb from pip. No PDK
-# download, no klayout-tools install, no OpenROAD, no Docker. A pull request
-# never waits on any of those.
+# **PDK-free** legs only. Everything here needs python3, cocotb from pip, and
+# the pinned OSS CAD Suite tarball for Icarus and Verilator. No PDK download,
+# no klayout-tools install, no OpenROAD, no Docker. A pull request never waits
+# on any of those.
+#
+# The simulators are pinned rather than taken from apt for two reasons. The
+# README's claims name their engines -- "12/12 on Icarus 14.0 and Verilator
+# 5.053" -- so CI running a different pair would be checking a different
+# thing. And ubuntu-latest's apt Verilator is 5.020, which cocotb 2.1.0's
+# shim cannot build against at all. See .github/scripts/install-oss-cad-suite.sh.
 #
 # The PDK-heavy legs -- `klt synthesize`, `klt place-and-route`, `klt drc`,
 # `klt lvs`, `klt sta` against gf180mcu -- are NOT run here and are not
@@ -52,11 +58,14 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install Verilator (for the RTL lint step)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends verilator
-          verilator --version
+      - name: Cache the pinned OSS CAD Suite
+        uses: actions/cache@v4
+        with:
+          path: ~/oss-cad-suite
+          key: oss-cad-suite-linux-x64-20260916
+
+      - name: Install the pinned OSS CAD Suite (Icarus 14.0, Verilator 5.053)
+        run: bash .github/scripts/install-oss-cad-suite.sh
 
       # Step 5 regenerates rtl/*.vh through spec/reference/synth_ref.py, which
       # imports numpy. Without it that step failed with ModuleNotFoundError and
@@ -108,12 +117,14 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install simulators
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends iverilog verilator
-          iverilog -V | head -1
-          verilator --version
+      - name: Cache the pinned OSS CAD Suite
+        uses: actions/cache@v4
+        with:
+          path: ~/oss-cad-suite
+          key: oss-cad-suite-linux-x64-20260916
+
+      - name: Install the pinned OSS CAD Suite (Icarus 14.0, Verilator 5.053)
+        run: bash .github/scripts/install-oss-cad-suite.sh
 
       - name: Install cocotb + numpy
         run: |
@@ -137,10 +148,17 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install Icarus + cocotb
+      - name: Cache the pinned OSS CAD Suite
+        uses: actions/cache@v4
+        with:
+          path: ~/oss-cad-suite
+          key: oss-cad-suite-linux-x64-20260916
+
+      - name: Install the pinned OSS CAD Suite (Icarus 14.0, Verilator 5.053)
+        run: bash .github/scripts/install-oss-cad-suite.sh
+
+      - name: Install cocotb + numpy
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends iverilog
           python3 -m pip install --disable-pip-version-check \
             "cocotb==${COCOTB_VERSION}" numpy
 
