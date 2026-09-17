@@ -1,0 +1,164 @@
+# CI for gf180-polysynth.
+#
+# Scope is deliberate and documented, not accidental: this workflow runs the
+# **PDK-free, tool-light** legs only. Everything here needs nothing but
+# python3, iverilog and verilator from apt, and cocotb from pip. No PDK
+# download, no klayout-tools install, no OpenROAD, no Docker. A pull request
+# never waits on any of those.
+#
+# The PDK-heavy legs -- `klt synthesize`, `klt place-and-route`, `klt drc`,
+# `klt lvs`, `klt sta` against gf180mcu -- are NOT run here and are not
+# expected to be. They run locally against a pinned environment and are
+# committed as append-only records under `sim/`. That split is stated in
+# `sim/README.md` -> "What CI does and does not do". Do not silently move a
+# leg across the line: if one moves, update that document in the same change.
+#
+# Runner choice is also deliberate: every job is `ubuntu-latest`, a hosted
+# runner. Do NOT route any of this to `[self-hosted, heavy]` -- issue #1971
+# found that pool queue-starved, and none of this work needs it. Each job
+# below finishes in single-digit minutes on a hosted runner.
+#
+# CI mints no evidence records. A green run means the sources still build and
+# the bit-exact comparison still passes on two simulators -- a smaller claim
+# than anything under `sim/`.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  COCOTB_VERSION: "2.1.0"
+
+jobs:
+  lint:
+    name: lint (python, json, shell, verilator -Wall, ROM freshness)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Verilator (for the RTL lint step)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends verilator
+          verilator --version
+
+      - name: Lint
+        run: bash .github/scripts/lint.sh
+
+  reference:
+    name: reference model self-test (102 tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install numpy + pytest
+        run: python3 -m pip install --disable-pip-version-check numpy pytest
+
+      # The reference model IS the executable half of the frozen contract
+      # (spec/NUMERIC-CONTRACT.md). If its own suite breaks, every "bit-exact"
+      # claim downstream of it is meaningless, so this runs before and
+      # independently of anything that touches the RTL.
+      - name: pytest spec/reference
+        working-directory: spec/reference
+        run: python3 -m pytest -q test_synth_ref.py
+
+  bitexact:
+    name: bit-exact cocotb suite (${{ matrix.sim }}, NV=${{ matrix.nv }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both engines, at the RTL default and at the contract's own voice
+        # count. NV=4 is the configuration the contract specifies; NV=2 is
+        # what rtl/synth_core.v defaults to, so both are load-bearing.
+        sim: [icarus, verilator]
+        nv: [2, 4]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install simulators
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog verilator
+          iverilog -V | head -1
+          verilator --version
+
+      - name: Install cocotb + numpy
+        run: |
+          python3 -m pip install --disable-pip-version-check \
+            "cocotb==${COCOTB_VERSION}" numpy
+
+      # Every output sample is compared against spec/reference/synth_ref.py
+      # with no tolerance. tb/run_tb.py reads the results XML and exits
+      # non-zero on any failure -- cocotb's own runner does not.
+      - name: Run the bench
+        run: python3 tb/run_tb.py --sim ${{ matrix.sim }} --nv ${{ matrix.nv }}
+
+  negative-controls:
+    name: injected-bug negative controls (must fail)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Icarus + cocotb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog
+          python3 -m pip install --disable-pip-version-check \
+            "cocotb==${COCOTB_VERSION}" numpy
+
+      # A passing suite proves nothing until you have watched it fail. Each
+      # INJECT_BUG_* define reintroduces one real defect; the suite MUST
+      # catch every one. This job fails if any injected bug survives -- which
+      # is how the prototype discovered that its own bench had a blind spot
+      # on one contract sentence (INJECT_BUG_ENV survived 9/9 until a
+      # targeted test was written for it).
+      - name: Every injected bug must be caught
+        run: |
+          set -u
+          survived=""
+          for bug in GAIN TICK UART ENV; do
+            if python3 tb/run_tb.py --sim icarus --define "INJECT_BUG_$bug=1" \
+                 > "/tmp/bug-$bug.log" 2>&1; then
+              echo "::error::INJECT_BUG_$bug SURVIVED the suite"
+              tail -30 "/tmp/bug-$bug.log"
+              survived="$survived $bug"
+            else
+              echo "caught INJECT_BUG_$bug"
+            fi
+          done
+          if [ -n "$survived" ]; then
+            echo "bugs that survived:$survived"
+            exit 1
+          fi
