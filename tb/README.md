@@ -9,12 +9,17 @@ bench passed, on a named engine, at a named commit, and nothing more.
 
 **Through `klt` (the evidence-producing path).** One request document per
 run under `runs/`; `klt functional-verification` emits a JSON report that a
-`sim/` evidence record cites.
+`sim/` evidence record cites. The testbench imports the reference model, and
+the request document has no field for a Python path, so `spec/reference/`
+must be on `PYTHONPATH`:
 
 ```bash
-cd tb/runs/verilator && klt functional-verification request.json --format json
-cd tb/runs/icarus    && klt functional-verification request.json --format json
+export PYTHONPATH="$PWD/spec/reference:${PYTHONPATH:-}"
+(cd tb/runs/verilator && klt functional-verification request.json --format json)
+(cd tb/runs/icarus    && klt functional-verification request.json --format json)
 ```
+
+`tb/run_tb.py` sets that itself, which is one reason it is the easier path.
 
 **Through `tb/run_tb.py` (the PDK-free path).** The same sources, the same
 testbench, driven straight through cocotb's own runner — needs only
