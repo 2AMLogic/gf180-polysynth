@@ -1,0 +1,30 @@
+# --- scratch, never evidence -------------------------------------------------
+__pycache__/
+*.pyc
+.DS_Store
+
+# klayout-tools working directories. Every `klt` verb writes its scratch into
+# a `.klt/` next to the request document; the durable artifacts are the JSON
+# reports copied under `sim/` as append-only evidence records.
+.klt/
+
+# cocotb / Verilator build trees (tb/run_tb.py and klt both rebuild these from
+# the committed sources in seconds -- nothing here is evidence).
+tb/sim_build/
+tb/results.xml
+bench/build/
+sim_build/
+results.xml
+
+# ECP5 build products. `cd fpga && make build` regenerates all of them from
+# the committed sources; the measured utilisation/Fmax figures live in the
+# README and in sim/ records, not in a committed log.
+fpga/bitstream.bit
+fpga/bitstream.config
+fpga/bitstream.json
+fpga/synth.log
+fpga/pnr.log
+
+# Machine-local environment override (env.sh.example is the committed
+# template; env.sh itself names absolute paths on one host).
+env.sh
