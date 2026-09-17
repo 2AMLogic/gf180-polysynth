@@ -32,3 +32,7 @@ state or imply a gf180mcu synthesis, P&R, DRC, LVS, STA or ERC result until
 one has been produced and recorded under `sim/`. T1 is graded per block **per
 PDK**: a sky130 result is not a gf180mcu result, and an ECP5 bitstream is not
 an ASIC result.
+
+<!-- BEGIN LOOM ORCHESTRATION (AGENTS) -->
+This repository uses [Loom](https://github.com/rjwalters/loom) for AI-powered development orchestration (dual-runtime: Claude Code reads `CLAUDE.md`; OpenAI Codex CLI and other AGENTS.md-aware runtimes read this file). See the Loom repository for the full guide (roles, labels, worktrees, configuration). When installed, Loom also writes a locally-substituted copy of the runtime-neutral guide to `.loom/AGENTS.md`.
+<!-- END LOOM ORCHESTRATION (AGENTS) -->

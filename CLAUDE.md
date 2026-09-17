@@ -44,3 +44,7 @@ block **per PDK** (`klayout-tools/docs/design-evidence-tiers.md`): a sky130
 result is not a gf180mcu result, and neither is an ECP5 bitstream. The
 README's status section is the load-bearing one — keep it conspicuously
 honest, including about what the prototype did on the *other* PDK.
+
+<!-- BEGIN LOOM ORCHESTRATION -->
+This repository uses [Loom](https://github.com/rjwalters/loom) for AI-powered development orchestration — see the Loom repository for the full guide (roles, labels, worktrees, configuration). When installed, Loom also writes a locally-substituted copy of that guide to `.loom/CLAUDE.md`.
+<!-- END LOOM ORCHESTRATION -->
