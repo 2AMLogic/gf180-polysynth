@@ -58,6 +58,12 @@ jobs:
           sudo apt-get install -y --no-install-recommends verilator
           verilator --version
 
+      # Step 5 regenerates rtl/*.vh through spec/reference/synth_ref.py, which
+      # imports numpy. Without it that step failed with ModuleNotFoundError and
+      # the ROM-freshness check never ran.
+      - name: Install numpy (rtl/gen_tables.py imports the reference model)
+        run: python3 -m pip install --disable-pip-version-check numpy
+
       - name: Lint
         run: bash .github/scripts/lint.sh
 
@@ -144,21 +150,25 @@ jobs:
       # is how the prototype discovered that its own bench had a blind spot
       # on one contract sentence (INJECT_BUG_ENV survived 9/9 until a
       # targeted test was written for it).
+      # Require exit status exactly 1 -- "the suite ran and tests failed".
+      # Accepting any non-zero status is what let this job pass vacuously:
+      # when tb/run_tb.py died at `import synth_ref` before a single test
+      # executed, every one of the four "caught" lines below was printed in
+      # about half a second, and the job went green while proving nothing.
+      # Exit 2 now means no verdict exists, and that is a failure here.
       - name: Every injected bug must be caught
         run: |
           set -u
-          survived=""
+          bad=""
           for bug in GAIN TICK UART ENV; do
-            if python3 tb/run_tb.py --sim icarus --define "INJECT_BUG_$bug=1" \
-                 > "/tmp/bug-$bug.log" 2>&1; then
-              echo "::error::INJECT_BUG_$bug SURVIVED the suite"
-              tail -30 "/tmp/bug-$bug.log"
-              survived="$survived $bug"
-            else
-              echo "caught INJECT_BUG_$bug"
-            fi
+            python3 tb/run_tb.py --sim icarus --define "INJECT_BUG_$bug=1" \
+              > "/tmp/bug-$bug.log" 2>&1 && rc=0 || rc=$?
+            case "$rc" in
+              1) echo "caught INJECT_BUG_$bug" ;;
+              0) echo "::error::INJECT_BUG_$bug SURVIVED the suite"
+                 tail -30 "/tmp/bug-$bug.log"; bad="$bad $bug(survived)" ;;
+              *) echo "::error::INJECT_BUG_$bug: suite did not run (exit $rc) -- no verdict"
+                 tail -30 "/tmp/bug-$bug.log"; bad="$bad $bug(did-not-run)" ;;
+            esac
           done
-          if [ -n "$survived" ]; then
-            echo "bugs that survived:$survived"
-            exit 1
-          fi
+          if [ -n "$bad" ]; then echo "failed:$bad"; exit 1; fi
