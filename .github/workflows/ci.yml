@@ -144,11 +144,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Icarus
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends iverilog
-          iverilog -V | head -1
+      - name: Cache the pinned OSS CAD Suite
+        uses: actions/cache@v4
+        with:
+          path: ~/oss-cad-suite
+          key: oss-cad-suite-linux-x64-20260916
+
+      - name: Install the pinned OSS CAD Suite (Icarus 14.0, Verilator 5.053)
+        run: bash .github/scripts/install-oss-cad-suite.sh
 
       # fpga/i2s_tx.v sits OUTSIDE the cocotb bench's boundary -- that stops at
       # synth_core's sample port -- so a fully green bit-exact suite says
