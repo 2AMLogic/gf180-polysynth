@@ -137,6 +137,29 @@ jobs:
       - name: Run the bench
         run: python3 tb/run_tb.py --sim ${{ matrix.sim }} --nv ${{ matrix.nv }}
 
+  i2s:
+    name: I2S transmitter testbench (+ negative control)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Icarus
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends iverilog
+          iverilog -V | head -1
+
+      # fpga/i2s_tx.v sits OUTSIDE the cocotb bench's boundary -- that stops at
+      # synth_core's sample port -- so a fully green bit-exact suite says
+      # nothing about it. The prototype's transmitter was wrong in two ways
+      # (MSB one BCLK late, and a fresh sample per half-frame) and this is the
+      # check that would have caught both. `sim-check` requires the committed
+      # RTL to pass AND the INJECT_BUG_I2S build to fail.
+      - name: Decode SDATA the way a DAC does
+        working-directory: fpga
+        run: make sim-check
+
   negative-controls:
     name: injected-bug negative controls (must fail)
     runs-on: ubuntu-latest
