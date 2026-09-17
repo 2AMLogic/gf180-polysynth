@@ -51,9 +51,16 @@ for h in e771e6b7b39d3941c471b772bfb5cdca398b78ee7fa964c3c90388d2cc888ba4 \
 done
 
 step "6. No absolute host paths leaked into committed sources"
-if git ls-files | grep -vE '^(LICENSE|spec/NUMERIC-CONTRACT\.md)$' \
-   | xargs grep -lI '/Users/' 2>/dev/null | grep . ; then
-  bad "the files above contain an absolute /Users/ path"
+# The prototype this repo came from had host-bound absolute paths in three
+# scripts; this is the check that stops them coming back.
+#
+# The pattern deliberately requires a character class after the prefix rather
+# than matching the bare prefix: a bare-prefix pattern matches THIS FILE,
+# since the pattern and the failure message both contain the prefix
+# literally. A real leak is always a prefix followed by a user name.
+if git ls-files \
+   | xargs grep -lIE '/Users/[a-z]|/home/[a-z]+/dev' 2>/dev/null | grep . ; then
+  bad "the files above contain an absolute host path"
 fi
 
 echo
