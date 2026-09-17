@@ -1,0 +1,13 @@
+{
+  "schema": "klt.functional_verification.request/1",
+  "engine": "icarus",
+  "sources": ["../../../rtl/uart_rx.v", "../../../rtl/synth_voice.v", "../../../rtl/synth_core.v"],
+  "hdl_toplevel": "synth_core",
+  "testbench": { "module": "test_synth_core", "search_path": "../../" },
+  "options": {
+    "timescale": ["1ns", "1ps"],
+    "random_seed": 1,
+    "defines": {},
+    "includes": ["../../../rtl"]
+  }
+}

@@ -25,6 +25,6 @@ fpga/bitstream.json
 fpga/synth.log
 fpga/pnr.log
 
-# Machine-local environment override (env.sh.example is the committed
-# template; env.sh itself names absolute paths on one host).
+# Machine-local environment shim. Cold-start setup is documented in the
+# README; an env.sh naming absolute paths on one host is not committed.
 env.sh
