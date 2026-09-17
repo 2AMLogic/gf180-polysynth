@@ -46,7 +46,7 @@ yosys + nextpnr-ecp5 + ecppack from the OSS CAD Suite (2026-09-16), Apple M5:
 | FF (TRELLIS_FF) | 433 / 24288 (1 %) |
 | MULT18X18D | 2 / 28 |
 | EHXPLLL | 1 / 2 |
-| Max frequency, `clk12` | **82.01 MHz** — PASS at the required 12.29 MHz |
+| Max frequency, `clk12` | **83.68 MHz** post-route — PASS at the required 12.29 MHz (nextpnr's post-placement estimate, printed earlier in the same log, is 82.01 MHz; the post-route figure is the one that counts) |
 | `bitstream.bit` | 117,970 bytes |
 | Wall clock, clean build | 3.4 s |
 
@@ -54,7 +54,7 @@ yosys + nextpnr-ecp5 + ecppack from the OSS CAD Suite (2026-09-16), Apple M5:
 
 **The bitstream has never been loaded onto hardware.** No board was attached.
 Everything above is a toolchain result: the design elaborates, maps, places,
-routes and packs, with timing met by a factor of 6.7 in the static analysis
+routes and packs, with timing met by a factor of 6.8 in the static analysis
 nextpnr does. Whether it makes a sound through a real I2S DAC is untested,
 and so is the I2S transmitter's electrical behaviour, the FTDI UART path, and
 the LPF's pin assignment against a physical board.

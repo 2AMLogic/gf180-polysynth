@@ -25,7 +25,7 @@ leg.
 | The comparison holds at volume, not just on crafted vectors | `bench/render.py`: **480,000/480,000 samples bit-exact** over 10 s of audio, 122.9 M cycles |
 | The testbench can actually fail | four `INJECT_BUG_*` defines, **all four caught**, each with its intended failure signature |
 | The RTL's lookup tables are the contract's | regenerating `rtl/*.vh` is a byte-identical no-op and both SHA-256s match contract Appendix A/B |
-| The design maps to an FPGA | ECP5 `LFE5U-25F`: 1294 LUT4, 433 FF, Fmax **82.01 MHz** against a required 12.29 MHz, 117,970-byte bitstream |
+| The design maps to an FPGA | ECP5 `LFE5U-25F`: 1294 LUT4, 433 FF, post-route Fmax **83.68 MHz** against a required 12.29 MHz, 117,970-byte bitstream |
 
 **Not verified. Not claimed. Not true yet:**
 
