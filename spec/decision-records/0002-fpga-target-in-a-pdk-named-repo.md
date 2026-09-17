@@ -91,9 +91,10 @@ every document here must preserve:
   to cite an FPGA artifact for it. Rule 4 exists to close that, and it is the
   rule most likely to be violated by accident — a reviewer should read every
   evidence record's cited artifact against the target it claims.
-- **`fpga/top.v` instantiates one voice (`NV=1`), not four.** The ECP5 leg is
-  therefore not even a full-scale demonstration of the ASIC target today.
-  That is a build-parameter difference, not a behavioural one (rule 3 is
-  intact: the voice count is a module parameter the contract itself
-  parameterizes), but it means the two legs are not synthesizing the same
-  amount of logic and their utilisation figures are not comparable.
+- **`fpga/top.v` builds all four voices (`NV=4`).** It instantiated one when
+  this record was first written, which made the ECP5 leg not even a
+  full-scale demonstration of the ASIC target; at `NV = 4` the two legs now
+  elaborate the same amount of logic, so their utilisation figures are
+  comparable in kind (not in units — LUT4s are not standard cells). The
+  voice count remains a module parameter the contract itself parameterizes,
+  so rule 3 is intact either way.

@@ -32,6 +32,13 @@ step "4. RTL is Verilator -Wall lint-clean"
 if command -v verilator > /dev/null; then
   verilator --lint-only -Wall -Irtl --top-module synth_core \
     rtl/uart_rx.v rtl/synth_voice.v rtl/synth_core.v || bad "verilator lint"
+  # fpga/i2s_tx.v too: it is outside the cocotb bench's boundary, so it gets
+  # what coverage it can. fpga/top.v and fpga/pll.v are NOT lintable here --
+  # pll.v instantiates the ECP5 primitive EHXPLLL, which Verilator cannot
+  # resolve without Lattice's cell library. They are covered by the ECP5
+  # build instead.
+  verilator --lint-only -Wall --top-module i2s_tx fpga/i2s_tx.v \
+    || bad "verilator lint (fpga/i2s_tx.v)"
 else
   echo "skipped: no verilator on PATH"
 fi

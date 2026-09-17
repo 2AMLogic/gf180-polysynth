@@ -137,6 +137,32 @@ jobs:
       - name: Run the bench
         run: python3 tb/run_tb.py --sim ${{ matrix.sim }} --nv ${{ matrix.nv }}
 
+  i2s:
+    name: I2S transmitter testbench (+ negative control)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache the pinned OSS CAD Suite
+        uses: actions/cache@v4
+        with:
+          path: ~/oss-cad-suite
+          key: oss-cad-suite-linux-x64-20260916
+
+      - name: Install the pinned OSS CAD Suite (Icarus 14.0, Verilator 5.053)
+        run: bash .github/scripts/install-oss-cad-suite.sh
+
+      # fpga/i2s_tx.v sits OUTSIDE the cocotb bench's boundary -- that stops at
+      # synth_core's sample port -- so a fully green bit-exact suite says
+      # nothing about it. The prototype's transmitter was wrong in two ways
+      # (MSB one BCLK late, and a fresh sample per half-frame) and this is the
+      # check that would have caught both. `sim-check` requires the committed
+      # RTL to pass AND the INJECT_BUG_I2S build to fail.
+      - name: Decode SDATA the way a DAC does
+        working-directory: fpga
+        run: make sim-check
+
   negative-controls:
     name: injected-bug negative controls (must fail)
     runs-on: ubuntu-latest

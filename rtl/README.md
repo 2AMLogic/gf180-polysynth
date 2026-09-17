@@ -26,7 +26,7 @@ python3 rtl/gen_tables.py && git diff --exit-code rtl/*.vh
 | `NV` | `2` | Voices instantiated. The contract specifies **4**; the default is 2 for build speed, and the mixer is a fixed 4-input sum so `NV` ≤ 4. `NV = 1, 2, 4` are each verified 12/12 on both engines — see `tb/README.md`. |
 | `UART_CLKS_PER_BIT` | `107` | 12.288 MHz core clock / 115200 baud. |
 
-`fpga/top.v` instantiates `NV = 1`.
+`fpga/top.v` instantiates `NV = 4`, the contract's voice count.
 
 ## Flow hygiene — why this RTL looks the way it does
 

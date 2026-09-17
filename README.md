@@ -25,7 +25,8 @@ leg.
 | The comparison holds at volume, not just on crafted vectors | `bench/render.py`: **480,000/480,000 samples bit-exact** over 10 s of audio, 122.9 M cycles |
 | The testbench can actually fail | four `INJECT_BUG_*` defines, **all four caught**, each with its intended failure signature |
 | The RTL's lookup tables are the contract's | regenerating `rtl/*.vh` is a byte-identical no-op and both SHA-256s match contract Appendix A/B |
-| The design maps to an FPGA | ECP5 `LFE5U-25F`: 1294 LUT4, 433 FF, post-route Fmax **83.68 MHz** against a required 12.29 MHz, 117,970-byte bitstream |
+| The design maps to an FPGA | ECP5 `LFE5U-25F` at `NV = 4`: 3468 LUT4, 1145 FF, 8/28 MULT18X18D, post-route Fmax **78.24 MHz** against a required 12.29 MHz, 150,361-byte bitstream |
+| The I2S output is decoded the way a DAC decodes it | `fpga/tb_i2s.v`: bit order, polarity, sign, slot padding, BCLK/LRCLK ratio — and `INJECT_BUG_I2S` is caught |
 
 **Not verified. Not claimed. Not true yet:**
 
@@ -45,9 +46,14 @@ leg.
 - **`sim/` is empty.** Every number on this page is reproducible from the
   committed sources, but none of it carries a record ID, a provenance block
   or an append-only guarantee. They are README numbers, not evidence records.
-- **`fpga/i2s_tx.v` has no testbench at all.** It sits outside the cocotb
-  bench's boundary and outside the contract's scope. It is the
-  least-verified file here.
+- **The I2S transmitter is verified only in simulation, and only for
+  waveform shape.** `fpga/tb_i2s.v` decodes SDATA as a DAC would and checks
+  bit order, polarity, sign, slot padding and clock ratios — it found two
+  real defects in the prototype's transmitter — but it sits outside the
+  contract's scope, and nothing electrical about the I2S link has been
+  tested. Earlier revisions of this repository carried the prototype's
+  transmitter with those two defects and said so; that file is now fixed and
+  covered.
 - **The T1 (sim-validated) checklist is not met on gf180mcu**, and not on
   anything else either. See the gap list below.
 
@@ -66,8 +72,9 @@ separate reasons, each of which matters on its own:
    ([`design-evidence-tiers.md`](https://github.com/2AMLogic/klayout-tools/blob/main/docs/design-evidence-tiers.md)).
    A sky130 result says nothing about gf180mcu.
 2. **Different design.** The routed layout was the *base-scope* netlist —
-   `NV = 1`, square wave only — not the RTL in `rtl/` today, which has four
-   waveforms and four available voices.
+   one voice, square wave only — not the RTL in `rtl/` today, which has four
+   waveforms and four available voices, and which `fpga/top.v` now builds at
+   `NV = 4`.
 3. **No power grid.** That place-and-route request carried no `power` block,
    so the layout had no PDN, no tapcells and no filler cells. sky130's deck
    called it clean anyway. gf180mcu's deck does not: the same omission there
