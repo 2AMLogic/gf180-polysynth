@@ -31,6 +31,10 @@ fpga/sim_bug.log
 # Machine-local environment shim. Cold-start setup is documented in the
 # README; an env.sh naming absolute paths on one host is not committed.
 env.sh
+
+# Reference audio fetched by refaudio/fetch.sh. The index under refaudio/ is
+# committed; the recordings it points at are working material and never are.
+refaudio/cache/
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use
